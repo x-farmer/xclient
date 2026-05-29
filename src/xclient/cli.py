@@ -186,12 +186,13 @@ def run_chat(
 
     try:
         with tracer_handle.tracer.start_as_current_span(
-            "openai.client",
+            "openai.chat_completions",
             kind=SpanKind.CLIENT,
             attributes={
                 "xfarmer.request_id": request_id,
-                "xfarmer.model": options.model,
+                "xfarmer.public_model": options.model,
                 "xfarmer.stream": options.stream,
+                "xfarmer.base_url": options.base_url,
             },
         ):
             default_headers = _build_outbound_headers(request_id)
