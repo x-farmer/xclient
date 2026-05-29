@@ -14,6 +14,7 @@ from xclient.observability import (
     DEFAULT_COMPONENT as _OBS_COMPONENT,
     EffectiveObservabilityConfig,
     ObservabilityConfigError,
+    configure_logging,
     load_observability_config,
 )
 
@@ -156,6 +157,14 @@ def run_chat(
     except ObservabilityConfigError as error:
         print(f"observability config error: {error}", file=stderr)
         return 2
+
+    logger = configure_logging(observability, component=_OBS_COMPONENT, stream=stderr)
+    logger.info(
+        "client starting",
+        base_url=options.base_url,
+        model=options.model,
+        stream=options.stream,
+    )
 
     if options.debug:
         _print_debug_selection(options, observability=observability, stderr=stderr)

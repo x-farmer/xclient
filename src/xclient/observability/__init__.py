@@ -14,6 +14,7 @@ from xclient.observability.config import (
     ObservabilityConfigError,
     load_observability_config,
 )
+from xclient.observability.logging import configure as configure_logging
 
 __all__ = (
     "DEFAULT_COMPONENT",
@@ -21,5 +22,6 @@ __all__ = (
     "EffectiveObservabilityConfig",
     "EffectiveTracingConfig",
     "ObservabilityConfigError",
+    "configure_logging",
     "load_observability_config",
 )
