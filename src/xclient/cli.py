@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import os
 import sys
+import uuid
 from typing import TextIO
 
 from xclient import openai_client
@@ -21,6 +22,8 @@ from xclient.observability import (
 _ENV_BASE_URL = "XF_BASE_URL"
 _ENV_API_KEY = "XF_API_KEY"
 _ENV_MODEL = "XF_MODEL"
+
+_REQUEST_ID_HEADER = "X-Request-ID"
 
 
 @dataclass(frozen=True)
@@ -158,7 +161,9 @@ def run_chat(
         print(f"observability config error: {error}", file=stderr)
         return 2
 
+    request_id = _new_request_id()
     logger = configure_logging(observability, component=_OBS_COMPONENT, stream=stderr)
+    logger = logger.bind(request_id=request_id)
     logger.info(
         "client starting",
         base_url=options.base_url,
@@ -167,13 +172,19 @@ def run_chat(
     )
 
     if options.debug:
-        _print_debug_selection(options, observability=observability, stderr=stderr)
+        _print_debug_selection(
+            options,
+            observability=observability,
+            request_id=request_id,
+            stderr=stderr,
+        )
 
     try:
         client = openai_client.create_openai_client(
             base_url=options.base_url,
             api_key=options.api_key,
             timeout=options.timeout,
+            default_headers={_REQUEST_ID_HEADER: request_id},
         )
         completion = openai_client.create_chat_completion(
             client,
@@ -215,17 +226,20 @@ def _print_debug_selection(
     options: ChatOptions,
     *,
     observability: EffectiveObservabilityConfig,
+    request_id: str,
     stderr: TextIO,
 ) -> None:
     """Writes non-secret debug lines for the resolved chat and observability config.
 
     The function deliberately omits ``api_key`` and any other credential
     material so the diagnostic output never leaks secrets into terminals,
-    pipes, or CI logs.
+    pipes, or CI logs. ``request_id`` is the correlation token the CLI sends
+    upstream so operators can match dev logs across services.
     """
     print(f"debug: base_url={options.base_url}", file=stderr)
     print(f"debug: model={options.model}", file=stderr)
     print(f"debug: stream={options.stream}", file=stderr)
+    print(f"debug: request_id={request_id}", file=stderr)
     print(f"debug: obs.service_name={observability.service_name}", file=stderr)
     print(f"debug: obs.environment={observability.environment}", file=stderr)
     print(f"debug: obs.logging.enabled={observability.logging.enabled}", file=stderr)
@@ -254,6 +268,15 @@ def _print_sdk_error(
 
 def _is_missing_openai_dependency(error: BaseException) -> bool:
     return isinstance(error, ModuleNotFoundError) and error.name == "openai"
+
+
+def _new_request_id() -> str:
+    """Returns the X-Request-ID value the CLI sends with the chat request.
+
+    The value is a UUID4 string so it does not collide with platform-generated
+    correlation IDs while remaining easy to search across structured logs.
+    """
+    return str(uuid.uuid4())
 
 
 def _print_completion(completion: object, *, stdout: TextIO) -> None:

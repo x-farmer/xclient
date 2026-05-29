@@ -39,3 +39,20 @@ def test_create_openai_client_omits_timeout_when_unset() -> None:
         api_key="xfk_test",
         base_url="http://localhost:8080/v1",
     )
+
+
+def test_create_openai_client_forwards_default_headers() -> None:
+    with mock.patch("xclient.openai_client._load_openai_client_class") as load_openai:
+        openai_class = load_openai.return_value
+        openai_client.create_openai_client(
+            base_url="http://localhost:8080/v1",
+            api_key="xfk_test",
+            timeout=None,
+            default_headers={"X-Request-ID": "req-abc"},
+        )
+
+    openai_class.assert_called_once_with(
+        api_key="xfk_test",
+        base_url="http://localhost:8080/v1",
+        default_headers={"X-Request-ID": "req-abc"},
+    )
