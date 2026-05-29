@@ -10,8 +10,10 @@ import sys
 import uuid
 from typing import TextIO
 
+import time
+
 from opentelemetry.propagate import inject as _inject_trace_context
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, Status, StatusCode
 
 from xclient import openai_client
 from xclient.observability import (
@@ -194,7 +196,7 @@ def run_chat(
                 "xfarmer.stream": options.stream,
                 "xfarmer.base_url": options.base_url,
             },
-        ):
+        ) as span:
             default_headers = _build_outbound_headers(request_id)
             client = openai_client.create_openai_client(
                 base_url=options.base_url,
@@ -202,6 +204,7 @@ def run_chat(
                 timeout=options.timeout,
                 default_headers=default_headers,
             )
+            span.add_event("request.started")
             completion = openai_client.create_chat_completion(
                 client,
                 model=options.model,
@@ -209,14 +212,30 @@ def run_chat(
                 stream=options.stream,
             )
             if options.stream:
-                _print_streaming_completion(completion, stdout=stdout)
+                _stream_with_events(completion, span=span, stdout=stdout)
             else:
                 _print_completion(completion, stdout=stdout)
+                span.add_event("stream.completed")
+    except KeyboardInterrupt:
+        # Honour Section 8.1 by reporting client-side cancellation with the
+        # stable error_type so dashboards can split intentional aborts from
+        # genuine failures.
+        logger.warning(
+            "client cancelled",
+            error_type="client.request_cancelled",
+        )
+        tracer_handle.shutdown(5.0)
+        return 130
     except Exception as error:
         # This CLI boundary reports SDK failures without interpreting protocol
         # details, while still allowing unexpected application bugs to surface.
         if _is_missing_openai_dependency(error) or openai_client.is_openai_sdk_exception(error):
             _print_sdk_error(error, debug=options.debug, stderr=stderr)
+            logger.error(
+                "openai sdk error",
+                error_type=_classify_sdk_error(error),
+                exception_type=type(error).__name__,
+            )
             tracer_handle.shutdown(5.0)
             return 1
         tracer_handle.shutdown(5.0)
@@ -334,6 +353,66 @@ def _print_streaming_completion(completion: object, *, stdout: TextIO) -> None:
                 stdout.write(content)
                 stdout.flush()
     stdout.write("\n")
+
+
+def _stream_with_events(completion: object, *, span: object, stdout: TextIO) -> None:
+    """Iterates a streaming completion while emitting Section 7.4 span events.
+
+    The function mirrors :func:`_print_streaming_completion` but adds
+    ``llm.first_token.received`` / ``stream.completed`` / ``stream.error``
+    events plus ``xfarmer.time_to_first_token_ms`` and
+    ``xfarmer.stream_duration_ms`` attributes so client traces match the
+    streaming taxonomy produced by Gateway and Worker.
+    """
+    start = time.monotonic()
+    first_token_recorded = False
+    try:
+        for chunk in completion:
+            choices = getattr(chunk, "choices", ())
+            for choice in choices:
+                delta = getattr(choice, "delta", None)
+                content = getattr(delta, "content", None)
+                if content:
+                    if not first_token_recorded:
+                        first_token_recorded = True
+                        span.add_event("llm.first_token.received")
+                        span.set_attribute(
+                            "xfarmer.time_to_first_token_ms",
+                            int((time.monotonic() - start) * 1000),
+                        )
+                    stdout.write(content)
+                    stdout.flush()
+    except Exception:
+        span.add_event("stream.error")
+        span.set_attribute("xfarmer.error_type", "internal.unexpected")
+        span.set_status(Status(StatusCode.ERROR, "stream error"))
+        raise
+    finally:
+        span.set_attribute(
+            "xfarmer.stream_duration_ms",
+            int((time.monotonic() - start) * 1000),
+        )
+    span.add_event("stream.completed")
+    stdout.write("\n")
+
+
+def _classify_sdk_error(error: BaseException) -> str:
+    """Maps OpenAI SDK exceptions onto the stable error_type vocabulary.
+
+    The classification is intentionally narrow: only failure shapes the CLI
+    can reliably detect map to a specific bucket, while everything else falls
+    back to ``internal.unexpected`` so log search retains a finite enum.
+    """
+    name = type(error).__name__
+    if name in {"AuthenticationError", "PermissionDeniedError"}:
+        return "auth.invalid_token"
+    if name in {"NotFoundError"}:
+        return "routing.endpoint_not_found"
+    if name in {"APITimeoutError", "APIConnectionError"}:
+        return "worker.llm_server_unreachable"
+    if name in {"RateLimitError"}:
+        return "routing.worker_not_available"
+    return "internal.unexpected"
 
 
 if __name__ == "__main__":
