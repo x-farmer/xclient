@@ -10,6 +10,12 @@ import sys
 from typing import TextIO
 
 from xclient import openai_client
+from xclient.observability import (
+    DEFAULT_COMPONENT as _OBS_COMPONENT,
+    EffectiveObservabilityConfig,
+    ObservabilityConfigError,
+    load_observability_config,
+)
 
 _ENV_BASE_URL = "XF_BASE_URL"
 _ENV_API_KEY = "XF_API_KEY"
@@ -128,14 +134,31 @@ def run_chat(
     *,
     stdout: TextIO = sys.stdout,
     stderr: TextIO = sys.stderr,
+    env: Mapping[str, str] | None = None,
 ) -> int:
     """Runs one OpenAI SDK chat completion request and prints assistant output.
 
     Success means the official SDK call completed. SDK exceptions are reported
     clearly without interpreting raw response bodies or OpenAI protocol details.
+
+    Args:
+        options: Resolved chat request options.
+        stdout: Stream that receives assistant content.
+        stderr: Stream that receives diagnostics and SDK errors.
+        env: Optional environment mapping for observability config. Tests pass
+            a literal dict; the CLI passes ``os.environ``.
     """
+    try:
+        observability = load_observability_config(
+            env if env is not None else os.environ,
+            component=_OBS_COMPONENT,
+        )
+    except ObservabilityConfigError as error:
+        print(f"observability config error: {error}", file=stderr)
+        return 2
+
     if options.debug:
-        _print_debug_selection(options, stderr=stderr)
+        _print_debug_selection(options, observability=observability, stderr=stderr)
 
     try:
         client = openai_client.create_openai_client(
@@ -179,10 +202,31 @@ def _handle_chat(namespace: argparse.Namespace, parser: argparse.ArgumentParser)
     return run_chat(options)
 
 
-def _print_debug_selection(options: ChatOptions, *, stderr: TextIO) -> None:
+def _print_debug_selection(
+    options: ChatOptions,
+    *,
+    observability: EffectiveObservabilityConfig,
+    stderr: TextIO,
+) -> None:
+    """Writes non-secret debug lines for the resolved chat and observability config.
+
+    The function deliberately omits ``api_key`` and any other credential
+    material so the diagnostic output never leaks secrets into terminals,
+    pipes, or CI logs.
+    """
     print(f"debug: base_url={options.base_url}", file=stderr)
     print(f"debug: model={options.model}", file=stderr)
     print(f"debug: stream={options.stream}", file=stderr)
+    print(f"debug: obs.service_name={observability.service_name}", file=stderr)
+    print(f"debug: obs.environment={observability.environment}", file=stderr)
+    print(f"debug: obs.logging.enabled={observability.logging.enabled}", file=stderr)
+    print(f"debug: obs.logging.level={observability.logging.level}", file=stderr)
+    print(f"debug: obs.logging.format={observability.logging.format}", file=stderr)
+    print(f"debug: obs.tracing.enabled={observability.tracing.enabled}", file=stderr)
+    print(f"debug: obs.tracing.exporter={observability.tracing.exporter}", file=stderr)
+    print(f"debug: obs.tracing.endpoint={observability.tracing.endpoint}", file=stderr)
+    print(f"debug: obs.tracing.protocol={observability.tracing.protocol}", file=stderr)
+    print(f"debug: obs.tracing.sample_ratio={observability.tracing.sample_ratio}", file=stderr)
 
 
 def _print_sdk_error(
