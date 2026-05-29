@@ -5,6 +5,12 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from opentelemetry import trace
+from opentelemetry.propagate import set_global_textmap
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
 from xclient import cli
 
 
@@ -58,3 +64,23 @@ def test_chat_options_fall_back_to_environment() -> None:
     assert options.message == "hello"
     assert options.stream is False
     assert options.timeout is None
+
+
+def test_build_outbound_headers_injects_traceparent_inside_span() -> None:
+    set_global_textmap(TraceContextTextMapPropagator())
+    provider = TracerProvider(sampler=ALWAYS_ON)
+    tracer = provider.get_tracer("test")
+    with tracer.start_as_current_span("client"):
+        headers = cli._build_outbound_headers("req-123")
+
+    assert headers["X-Request-ID"] == "req-123"
+    assert "traceparent" in headers
+
+
+def test_build_outbound_headers_without_active_span_only_carries_request_id() -> None:
+    set_global_textmap(TraceContextTextMapPropagator())
+    trace.set_tracer_provider(trace.NoOpTracerProvider())
+
+    headers = cli._build_outbound_headers("req-456")
+
+    assert headers == {"X-Request-ID": "req-456"}

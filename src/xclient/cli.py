@@ -10,6 +10,9 @@ import sys
 import uuid
 from typing import TextIO
 
+from opentelemetry.propagate import inject as _inject_trace_context
+from opentelemetry.trace import SpanKind
+
 from xclient import openai_client
 from xclient.observability import (
     DEFAULT_COMPONENT as _OBS_COMPONENT,
@@ -182,22 +185,32 @@ def run_chat(
         )
 
     try:
-        client = openai_client.create_openai_client(
-            base_url=options.base_url,
-            api_key=options.api_key,
-            timeout=options.timeout,
-            default_headers={_REQUEST_ID_HEADER: request_id},
-        )
-        completion = openai_client.create_chat_completion(
-            client,
-            model=options.model,
-            message=options.message,
-            stream=options.stream,
-        )
-        if options.stream:
-            _print_streaming_completion(completion, stdout=stdout)
-        else:
-            _print_completion(completion, stdout=stdout)
+        with tracer_handle.tracer.start_as_current_span(
+            "openai.client",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "xfarmer.request_id": request_id,
+                "xfarmer.model": options.model,
+                "xfarmer.stream": options.stream,
+            },
+        ):
+            default_headers = _build_outbound_headers(request_id)
+            client = openai_client.create_openai_client(
+                base_url=options.base_url,
+                api_key=options.api_key,
+                timeout=options.timeout,
+                default_headers=default_headers,
+            )
+            completion = openai_client.create_chat_completion(
+                client,
+                model=options.model,
+                message=options.message,
+                stream=options.stream,
+            )
+            if options.stream:
+                _print_streaming_completion(completion, stdout=stdout)
+            else:
+                _print_completion(completion, stdout=stdout)
     except Exception as error:
         # This CLI boundary reports SDK failures without interpreting protocol
         # details, while still allowing unexpected application bugs to surface.
@@ -282,6 +295,21 @@ def _new_request_id() -> str:
     correlation IDs while remaining easy to search across structured logs.
     """
     return str(uuid.uuid4())
+
+
+def _build_outbound_headers(request_id: str) -> dict[str, str]:
+    """Builds the headers attached to every OpenAI SDK request.
+
+    The helper sets ``X-Request-ID`` for human-friendly correlation and asks
+    the active OpenTelemetry text-map propagator to add W3C ``traceparent``
+    and ``tracestate`` headers. ``inject`` only writes headers when a span is
+    active, so callers should invoke this function while inside the client
+    span created by ``run_chat``; otherwise the headers map carries only the
+    request id.
+    """
+    headers: dict[str, str] = {_REQUEST_ID_HEADER: request_id}
+    _inject_trace_context(headers)
+    return headers
 
 
 def _print_completion(completion: object, *, stdout: TextIO) -> None:
