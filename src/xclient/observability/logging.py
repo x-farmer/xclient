@@ -127,6 +127,7 @@ def _configure_structlog(
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso", utc=True, key="time"),
         _make_resource_processor(resource_fields),
+        _trace_context_processor,
         renderer,
     ]
     structlog.configure(
@@ -148,6 +149,30 @@ def _make_resource_processor(
         return event_dict
 
     return processor
+
+
+def _trace_context_processor(
+    _logger: object,
+    _name: str,
+    event_dict: MutableMapping[str, object],
+) -> MutableMapping[str, object]:
+    """Injects the active OpenTelemetry trace_id and span_id into a record.
+
+    The processor is best-effort: if the OpenTelemetry SDK is not installed
+    or no active span exists, the record is returned unchanged so structured
+    logging works regardless of tracing state.
+    """
+    try:
+        from opentelemetry import trace as _trace
+    except ImportError:
+        return event_dict
+    span = _trace.get_current_span()
+    context = span.get_span_context()
+    if not context or not context.is_valid:
+        return event_dict
+    event_dict.setdefault("trace_id", format(context.trace_id, "032x"))
+    event_dict.setdefault("span_id", format(context.span_id, "016x"))
+    return event_dict
 
 
 def _read_package_version() -> str:

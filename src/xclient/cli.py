@@ -16,6 +16,7 @@ from xclient.observability import (
     EffectiveObservabilityConfig,
     ObservabilityConfigError,
     configure_logging,
+    init_tracing,
     load_observability_config,
 )
 
@@ -164,6 +165,7 @@ def run_chat(
     request_id = _new_request_id()
     logger = configure_logging(observability, component=_OBS_COMPONENT, stream=stderr)
     logger = logger.bind(request_id=request_id)
+    tracer_handle = init_tracing(observability, component=_OBS_COMPONENT)
     logger.info(
         "client starting",
         base_url=options.base_url,
@@ -201,9 +203,12 @@ def run_chat(
         # details, while still allowing unexpected application bugs to surface.
         if _is_missing_openai_dependency(error) or openai_client.is_openai_sdk_exception(error):
             _print_sdk_error(error, debug=options.debug, stderr=stderr)
+            tracer_handle.shutdown(5.0)
             return 1
+        tracer_handle.shutdown(5.0)
         raise
 
+    tracer_handle.shutdown(5.0)
     return 0
 
 
