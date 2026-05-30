@@ -1,0 +1,58 @@
+# Keep the build context small so `COPY src/xclient ...` only needs the
+# package source. The build stage installs deps from uv.lock and copies the
+# package tree explicitly — anything regenerated or unrelated to the build
+# must stay out of the image and out of the cache key.
+
+# Version control and CI metadata.
+.git
+.gitignore
+.github
+
+# Editor / OS scratch files.
+.vscode
+.idea
+.DS_Store
+
+# Local Python toolchains and caches (the builder reinstalls inside the
+# image so any host-side virtualenv would be stale and ABI-mismatched).
+.venv
+venv
+env
+.python-version
+.tox
+.nox
+.mypy_cache
+.ruff_cache
+.pytest_cache
+__pycache__
+*.py[cod]
+*.egg-info
+build
+dist
+
+# Tests and development-only assets.
+tests
+test-results
+coverage
+.coverage
+.coverage.*
+htmlcov
+
+# Project documentation that is not consumed by the build.
+README.md
+agent.md
+docs
+skills
+LICENSE
+.cursor
+
+# Docker build inputs that should never appear inside the runtime image.
+Dockerfile
+.dockerignore
+
+# Local environment files. xclient receives configuration via env vars at
+# runtime (OPENAI_API_KEY, OTEL_EXPORTER_OTLP_ENDPOINT, …), not via
+# committed dotenv files.
+.env
+.env.*
+!.env.example
