@@ -69,6 +69,11 @@ class EffectiveTracingConfig:
         protocol: ``grpc`` or ``http``.
         insecure: True when the OTLP transport must skip TLS (dev only).
         sample_ratio: Head-based sampling ratio in the closed interval [0, 1].
+        auth_token: OTLP ingestion bearer token. When non-empty it is sent as an
+            ``Authorization: Bearer <token>`` header so a collector enforcing
+            bearer-token auth accepts the spans; an empty string sends no header,
+            keeping collectors without auth working. The value is a shared secret
+            and must never be logged.
     """
 
     enabled: bool
@@ -77,6 +82,7 @@ class EffectiveTracingConfig:
     protocol: str
     insecure: bool
     sample_ratio: float
+    auth_token: str = ""
 
 
 @dataclass(frozen=True)
@@ -173,6 +179,11 @@ def load_observability_config(
         minimum=0.0,
         maximum=1.0,
     )
+    # OTLP ingestion bearer token. Stored verbatim (no enum/range validation)
+    # because the collector compares the whole bearer value; an empty string
+    # disables the Authorization header. Treated as a secret: never logged or
+    # echoed back in errors.
+    auth_token = (env.get("XF_OBS_TRACING_AUTH_TOKEN") or "").strip()
     tracing_enabled = _resolve_bool(env, "XF_OBS_TRACING_ENABLED", default=True)
     if exporter == "none":
         tracing_enabled = False
@@ -188,6 +199,7 @@ def load_observability_config(
         protocol=protocol,
         insecure=insecure,
         sample_ratio=sample_ratio,
+        auth_token=auth_token,
     )
 
     return EffectiveObservabilityConfig(

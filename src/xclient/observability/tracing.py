@@ -116,24 +116,44 @@ def _build_exporter(cfg: EffectiveObservabilityConfig):
     gRPC is the default for the dev stack documented in the observability
     plan; HTTP exists for deployments that cannot reach the collector over
     gRPC. The CLI does not own retry policy; the SDK applies its built-in
-    exponential backoff.
+    exponential backoff. When ``cfg.tracing.auth_token`` is set the exporter
+    carries a bearer Authorization header so a collector enforcing ingestion
+    auth accepts the spans.
     """
     protocol = cfg.tracing.protocol
     endpoint = cfg.tracing.endpoint
     insecure = cfg.tracing.insecure
+    headers = _auth_headers(cfg.tracing.auth_token)
     if protocol == "grpc":
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
             OTLPSpanExporter as GrpcSpanExporter,
         )
 
-        return GrpcSpanExporter(endpoint=endpoint, insecure=insecure)
+        return GrpcSpanExporter(endpoint=endpoint, insecure=insecure, headers=headers)
     if protocol == "http":
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
             OTLPSpanExporter as HttpSpanExporter,
         )
 
-        return HttpSpanExporter(endpoint=endpoint)
+        return HttpSpanExporter(endpoint=endpoint, headers=headers)
     raise ValueError(f"unsupported tracing protocol: {protocol!r}")
+
+
+def _auth_headers(token: str) -> dict[str, str] | None:
+    """Builds the OTLP metadata that authenticates the exporter to the collector.
+
+    Returns ``None`` for an empty token so the exporter sends no header and
+    collectors without ingestion auth keep working. The header name is the
+    lower-case ``authorization`` gRPC metadata requires; collectors that
+    canonicalise HTTP headers still match it, so one mapping serves both
+    transports. The header is set in code rather than through
+    ``OTEL_EXPORTER_OTLP_HEADERS`` because the OpenTelemetry SDKs disagree on how
+    that variable percent-encodes the space in ``Bearer <token>``. The token is a
+    secret and must not be logged.
+    """
+    if not token:
+        return None
+    return {"authorization": f"Bearer {token}"}
 
 
 def _build_resource(

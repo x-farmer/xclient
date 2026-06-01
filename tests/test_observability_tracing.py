@@ -58,6 +58,16 @@ def test_init_tracing_shutdown_is_idempotent() -> None:
     handle.shutdown(1.0)
 
 
+def test_auth_headers_empty_token_returns_none() -> None:
+    assert obs_tracing._auth_headers("") is None
+
+
+def test_auth_headers_builds_lowercase_bearer_authorization() -> None:
+    assert obs_tracing._auth_headers("ingest-token") == {
+        "authorization": "Bearer ingest-token"
+    }
+
+
 def test_init_tracing_enabled_builds_sdk_provider() -> None:
     enabled = obs_config.EffectiveTracingConfig(
         enabled=True,

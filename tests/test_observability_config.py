@@ -24,6 +24,7 @@ def test_load_observability_config_applies_defaults() -> None:
     assert effective.tracing.protocol == "grpc"
     assert effective.tracing.insecure is True
     assert effective.tracing.sample_ratio == 1.0
+    assert effective.tracing.auth_token == ""
 
 
 def test_load_observability_config_respects_overrides() -> None:
@@ -111,3 +112,11 @@ def test_load_observability_config_component_override() -> None:
 def test_load_observability_config_empty_component_rejected() -> None:
     with pytest.raises(obs_config.ObservabilityConfigError):
         obs_config.load_observability_config(env={}, component="  ")
+
+
+def test_load_observability_config_reads_and_trims_auth_token() -> None:
+    effective = obs_config.load_observability_config(
+        env={"XF_OBS_TRACING_AUTH_TOKEN": "  ingest-token  "}
+    )
+
+    assert effective.tracing.auth_token == "ingest-token"
