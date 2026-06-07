@@ -14,20 +14,6 @@ This skill owns the helper script at
 `skills/build-image/scripts/build-image.sh`. Run all commands from the XClient
 project root (the directory holding this project's `Makefile` and `Dockerfile`).
 
-## IDE Integration
-
-This skill is IDE-neutral. The canonical instructions and the helper script live
-here in `skills/build-image/SKILL.md`. Each IDE may add a thin wrapper that
-*references* this file instead of duplicating it:
-
-- **Cursor**: `.cursor/build-image/SKILL.md` carries Cursor frontmatter
-  (`name`, `description`) and points back to this file so `/build-image` works as
-  a slash command.
-- **Other IDEs / agents**: register the skill wherever the tool scans and
-  reference `skills/build-image/SKILL.md` rather than copying it.
-
-Keep the operational steps in this file only; wrappers should just point here.
-
 ## When to Use This Skill
 
 Read this skill when the task asks to build, rebuild, or tag the XClient OCI
