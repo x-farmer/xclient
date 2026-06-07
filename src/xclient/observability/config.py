@@ -184,7 +184,10 @@ def load_observability_config(
     # disables the Authorization header. Treated as a secret: never logged or
     # echoed back in errors.
     auth_token = (env.get("XF_OBS_TRACING_AUTH_TOKEN") or "").strip()
-    tracing_enabled = _resolve_bool(env, "XF_OBS_TRACING_ENABLED", default=True)
+    # Tracing is opt-in: it defaults to disabled so a plain CLI invocation never
+    # tries to reach a collector. Operators must set XF_OBS_TRACING_ENABLED to a
+    # truthy value (and provide an endpoint) to export spans.
+    tracing_enabled = _resolve_bool(env, "XF_OBS_TRACING_ENABLED", default=False)
     if exporter == "none":
         tracing_enabled = False
     if tracing_enabled and not endpoint:

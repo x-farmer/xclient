@@ -18,7 +18,9 @@ def test_load_observability_config_applies_defaults() -> None:
     assert effective.logging.enabled is True
     assert effective.logging.level == "info"
     assert effective.logging.format == "json"
-    assert effective.tracing.enabled is True
+    # Tracing is opt-in, so an unconfigured environment leaves it disabled even
+    # though the exporter/endpoint defaults are still resolved.
+    assert effective.tracing.enabled is False
     assert effective.tracing.exporter == "otlp"
     assert effective.tracing.endpoint == "localhost:4317"
     assert effective.tracing.protocol == "grpc"
@@ -49,6 +51,8 @@ def test_load_observability_config_respects_overrides() -> None:
     assert effective.logging.enabled is False
     assert effective.logging.level == "debug"
     assert effective.logging.format == "text"
+    # Explicit XF_OBS_TRACING_ENABLED=true opts back in over the disabled default.
+    assert effective.tracing.enabled is True
     assert effective.tracing.exporter == "otlp"
     assert effective.tracing.endpoint == "collector.svc:4318"
     assert effective.tracing.protocol == "http"
