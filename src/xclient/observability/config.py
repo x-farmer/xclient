@@ -16,7 +16,7 @@ from dataclasses import dataclass
 DEFAULT_COMPONENT = "client"
 """Stable platform component identifier for the xclient CLI."""
 
-_DEFAULT_SERVICE_NAME = "x-farmer-client"
+_DEFAULT_SERVICE_NAME = "xfarms-client"
 _DEFAULT_ENVIRONMENT = "development"
 
 _DEFAULT_LOG_LEVEL = "info"
@@ -118,7 +118,7 @@ def load_observability_config(
         env: Environment mapping. Tests pass a literal dict to stay
             independent from the process environment.
         component: Platform component identifier used to default the
-            ``service_name`` to ``x-farmer-<component>`` when
+            ``service_name`` to ``xfarms-<component>`` when
             ``XF_OBS_SERVICE_NAME`` is not set.
 
     Returns:
@@ -132,8 +132,8 @@ def load_observability_config(
     if not component:
         raise ObservabilityConfigError("component must be a non-empty identifier")
 
-    service_name = (env.get("XF_OBS_SERVICE_NAME") or "").strip() or f"x-farmer-{component}"
-    if service_name == "x-farmer-":  # only possible if component is whitespace
+    service_name = (env.get("XF_OBS_SERVICE_NAME") or "").strip() or f"xfarms-{component}"
+    if service_name == "xfarms-":  # only possible if component is whitespace
         raise ObservabilityConfigError("XF_OBS_SERVICE_NAME could not be defaulted")
 
     environment = (env.get("XF_OBS_ENVIRONMENT") or "").strip() or _DEFAULT_ENVIRONMENT

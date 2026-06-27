@@ -1,4 +1,4 @@
-"""Thin OpenAI-compatible CLI client for x-farmer Gateway testing."""
+"""Thin OpenAI-compatible CLI client for xFarms Gateway testing."""
 
 __all__ = ["__version__"]
 

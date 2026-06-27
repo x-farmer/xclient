@@ -92,10 +92,10 @@ COPY src/xclient /install/xclient
 FROM gcr.io/distroless/python3-debian12:nonroot AS runtime
 
 ARG VERSION=development
-LABEL org.opencontainers.image.title="x-farmer xclient ${VERSION}" \
-      org.opencontainers.image.description="Thin OpenAI-compatible CLI client for x-farmer API Gateway testing." \
+LABEL org.opencontainers.image.title="xFarms xclient ${VERSION}" \
+      org.opencontainers.image.description="Thin OpenAI-compatible CLI client for xFarms API Gateway testing." \
       org.opencontainers.image.source="https://github.com/x-farmer/xclient" \
-      org.opencontainers.image.vendor="x-farmer" \
+      org.opencontainers.image.vendor="xFarms" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.licenses="Apache-2.0"
 

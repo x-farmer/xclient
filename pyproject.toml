@@ -1,7 +1,7 @@
 [project]
 name = "xclient"
 version = "0.1.0"
-description = "Thin OpenAI-compatible CLI client for x-farmer API Gateway testing."
+description = "Thin OpenAI-compatible CLI client for xFarms API Gateway testing."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

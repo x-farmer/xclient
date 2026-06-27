@@ -1,4 +1,4 @@
-"""Command-line entry point for x-farmer OpenAI-compatible Gateway testing."""
+"""Command-line entry point for xFarms OpenAI-compatible Gateway testing."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Builds the CLI parser for the `xclient` executable."""
     parser = argparse.ArgumentParser(
         prog="xclient",
-        description="Thin OpenAI SDK client for testing x-farmer API Gateway.",
+        description="Thin OpenAI SDK client for testing xFarms API Gateway.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -191,10 +191,10 @@ def run_chat(
             "openai.chat_completions",
             kind=SpanKind.CLIENT,
             attributes={
-                "xfarmer.request_id": request_id,
-                "xfarmer.public_model": options.model,
-                "xfarmer.stream": options.stream,
-                "xfarmer.base_url": options.base_url,
+                "xfarms.request_id": request_id,
+                "xfarms.public_model": options.model,
+                "xfarms.stream": options.stream,
+                "xfarms.base_url": options.base_url,
             },
         ) as span:
             default_headers = _build_outbound_headers(request_id)
@@ -360,8 +360,8 @@ def _stream_with_events(completion: object, *, span: object, stdout: TextIO) -> 
 
     The function mirrors :func:`_print_streaming_completion` but adds
     ``llm.first_token.received`` / ``stream.completed`` / ``stream.error``
-    events plus ``xfarmer.time_to_first_token_ms`` and
-    ``xfarmer.stream_duration_ms`` attributes so client traces match the
+    events plus ``xfarms.time_to_first_token_ms`` and
+    ``xfarms.stream_duration_ms`` attributes so client traces match the
     streaming taxonomy produced by Gateway and Worker.
     """
     start = time.monotonic()
@@ -377,19 +377,19 @@ def _stream_with_events(completion: object, *, span: object, stdout: TextIO) -> 
                         first_token_recorded = True
                         span.add_event("llm.first_token.received")
                         span.set_attribute(
-                            "xfarmer.time_to_first_token_ms",
+                            "xfarms.time_to_first_token_ms",
                             int((time.monotonic() - start) * 1000),
                         )
                     stdout.write(content)
                     stdout.flush()
     except Exception:
         span.add_event("stream.error")
-        span.set_attribute("xfarmer.error_type", "internal.unexpected")
+        span.set_attribute("xfarms.error_type", "internal.unexpected")
         span.set_status(Status(StatusCode.ERROR, "stream error"))
         raise
     finally:
         span.set_attribute(
-            "xfarmer.stream_duration_ms",
+            "xfarms.stream_duration_ms",
             int((time.monotonic() - start) * 1000),
         )
     span.add_event("stream.completed")

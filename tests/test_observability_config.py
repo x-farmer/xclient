@@ -13,7 +13,7 @@ from xclient.observability import config as obs_config
 def test_load_observability_config_applies_defaults() -> None:
     effective = obs_config.load_observability_config(env={})
 
-    assert effective.service_name == "x-farmer-client"
+    assert effective.service_name == "xfarms-client"
     assert effective.environment == "development"
     assert effective.logging.enabled is True
     assert effective.logging.level == "info"
@@ -110,7 +110,7 @@ def test_load_observability_config_rejects_invalid_boolean() -> None:
 def test_load_observability_config_component_override() -> None:
     effective = obs_config.load_observability_config(env={}, component="worker")
 
-    assert effective.service_name == "x-farmer-worker"
+    assert effective.service_name == "xfarms-worker"
 
 
 def test_load_observability_config_empty_component_rejected() -> None:

@@ -1,7 +1,7 @@
 # xclient
 
 `xclient` is a minimal Python CLI that uses the official OpenAI Python SDK to
-exercise the x-farmer API Gateway as an OpenAI-compatible endpoint.
+exercise the xFarms API Gateway as an OpenAI-compatible endpoint.
 
 It is intentionally thin:
 
@@ -43,7 +43,7 @@ Use the API Gateway OpenAI-compatible base URL, including the `/v1` prefix:
 http://localhost:8080/v1
 ```
 
-Public OpenAI-compatible endpoints require an x-farmer API Token as the OpenAI
+Public OpenAI-compatible endpoints require an xFarms API Token as the OpenAI
 SDK `api_key`.
 
 ## Non-Streaming Chat
@@ -122,7 +122,7 @@ All tracing knobs are environment variables (the CLI owns no config file):
 | `XF_OBS_TRACING_AUTH_TOKEN` | OTLP ingest bearer token; empty sends no auth header. | (empty) |
 | `XF_OBS_TRACING_SAMPLE_RATIO` | Head-based sampling ratio `0.0`–`1.0`. | `1.0` |
 | `XF_OBS_TRACING_EXPORTER` | `otlp` or `none` (`none` also disables tracing). | `otlp` |
-| `XF_OBS_SERVICE_NAME` / `XF_OBS_ENVIRONMENT` | Resource attributes on the spans. | `x-farmer-client` / `development` |
+| `XF_OBS_SERVICE_NAME` / `XF_OBS_ENVIRONMENT` | Resource attributes on the spans. | `xfarms-client` / `development` |
 
 The API key and the ingest token are treated as secrets and never appear in
 spans, logs, or `--debug` output.

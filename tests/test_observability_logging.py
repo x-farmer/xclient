@@ -43,7 +43,7 @@ def test_configure_logging_emits_json_resource_fields() -> None:
     logger.info("client starting", base_url="http://localhost/v1", model="bill-qwen3")
 
     record = json.loads(buf.getvalue().strip())
-    assert record["service"] == "x-farmer-client"
+    assert record["service"] == "xfarms-client"
     assert record["component"] == "client"
     assert record["environment"] == "development"
     assert record["version"] == "0.1.0-test"

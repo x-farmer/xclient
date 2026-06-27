@@ -168,7 +168,7 @@ def _build_resource(
         "service.name": cfg.service_name,
         "service.version": resolved_version,
         "deployment.environment": cfg.environment,
-        "xfarmer.component": component,
+        "xfarms.component": component,
     }
     return Resource.create(attributes)
 
