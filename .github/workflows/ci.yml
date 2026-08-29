@@ -21,3 +21,5 @@ jobs:
       component: xclient
       superproject: x-farmer/x-farmer-dev
     secrets: inherit
+
+# retrigger
