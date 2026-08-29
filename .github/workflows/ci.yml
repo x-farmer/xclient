@@ -1,0 +1,23 @@
+name: ci
+
+# Tier 1 CI for x-farmer/xclient. On PR->dev it also dispatches the
+# superproject full-platform E2E (Tier 2), where xclient is the request-path
+# driver.
+
+on:
+  push:
+    branches-ignore: [main, dev]
+  pull_request:
+    branches: [dev]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: x-farmer/.github/.github/workflows/python-app.yml@main
+    with:
+      component: xclient
+      superproject: x-farmer/x-farmer-dev
+    secrets: inherit
