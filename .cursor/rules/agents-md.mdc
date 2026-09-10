@@ -1,0 +1,10 @@
+---
+description: Read and follow the repository AGENTS.md before development work
+alwaysApply: true
+---
+
+# Follow AGENTS.md
+
+Before planning, editing, reviewing, or explaining repository work, read and
+follow [`AGENTS.md`](../../AGENTS.md). This rule is only a Cursor adapter; all
+canonical instructions and document-routing rules live in `AGENTS.md`.

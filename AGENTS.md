@@ -1,23 +1,26 @@
-# XClient Agent Entry Guide
+# XClient Agent Guide
 
-This file is the entry point for AI agents working in the xclient codebase.
-All paths in this file are relative to the xclient project root.
+This file is the canonical entry point for AI agents working in the xclient
+codebase. All paths are relative to the xclient project root, so this harness
+works both as a standalone clone and as `src/xclient` inside x-farmer-dev. When
+a parent x-farmer-dev `AGENTS.md` exists, follow it in addition to this guide.
 
 ## Required XClient Reading
 
 Before planning, reviewing, or explaining xclient work, read:
 
-1. `docs/development/architecture-spec.md` — understand the xclient Clean Architecture boundaries.
+1. `docs/standards/architecture.md` — understand the xclient Clean Architecture boundaries.
 
 Before adding or modifying any code, read:
 
-1. `docs/development/architecture-spec.md` — understand that xclient uses Clean Architecture as its design principle.
-2. `docs/development/coding-style.md` — follow Python naming, docstrings, type annotations, exceptions, CLI, and testing rules.
+1. `docs/standards/architecture.md` — understand that xclient uses Clean Architecture as its design principle.
+2. `docs/standards/python-style.md` — follow Python naming, docstrings, type annotations, exceptions, CLI, and testing rules.
+3. `docs/standards/comment-content-rule.md` — apply the shared comment-content gate.
 
 ## Coding Style Completion Gate
 
 For any Python, CLI, adapter, infrastructure, test, or xclient support code
-addition or modification, `docs/development/coding-style.md` is not just
+addition or modification, `docs/standards/python-style.md` is not just
 background reading. It is a mandatory completion gate.
 
 Before claiming that xclient work is done, agents must perform a manual
@@ -62,3 +65,15 @@ component's API contract as the source of truth.
 
 XClient must not infer OpenAI-compatible API behavior from provider
 implementation details.
+
+If the provider contract is unavailable in a standalone clone, stop and obtain
+the contract or use the x-farmer-dev integration checkout.
+
+## Plans, Commits, Skills, And Harness Changes
+
+- Store active plan drafts under `docs/plans/manuscripts/` using
+  `YYYYMMDD-<short-topic>.md`.
+- Follow `docs/standards/conventional-commits.md` for commit messages.
+- Discover canonical task workflows through `skills/README.md`.
+- Before changing agent instructions, standards, or adapters, read
+  `docs/standards/ai-development-harness.md`.

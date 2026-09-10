@@ -1,3 +1,9 @@
+---
+name: build-image
+description: Build the XClient OCI image with a git-derived tag. Use when asked to build, tag, or push the XClient image.
+disable-model-invocation: true
+---
+
 # Build XClient OCI Image
 
 Build the x-farmer XClient project's OCI image with a git-derived tag:

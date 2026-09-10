@@ -40,11 +40,15 @@ htmlcov
 
 # Project documentation that is not consumed by the build.
 README.md
-agent.md
+AGENTS.md
 docs
 skills
 LICENSE
 .cursor
+.agents
+.claude
+.cursorindexingignore
+CLAUDE.md
 
 # Docker build inputs that should never appear inside the runtime image.
 Dockerfile

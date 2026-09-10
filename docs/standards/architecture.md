@@ -1,4 +1,4 @@
-# XClient Architecture Spec
+# XClient Architecture Standard
 
 本文件定義 xclient project 的架構開發原則，適用於所有開發人員與 AI
 agent。
@@ -9,7 +9,7 @@ HTTP client、OpenAI-compatible SDK/client、config loading、terminal I/O、
 logging backend 與部署細節。
 
 本文整理自 [The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)，
-並搭配 xclient Python 規範 [`coding-style.md`](coding-style.md) 使用。
+並搭配 xclient Python 規範 [`python-style.md`](python-style.md) 使用。
 
 ## 核心目標
 
@@ -245,5 +245,4 @@ AI agent 新增或修改本 project 程式碼時必須遵守以下規則：
 - 修改 use case 或 domain model 時，必須保持不需要啟動 CLI、讀取外部設定或呼叫外部 API 即可測試。
 - 若需要新增 protocol，先確認它是否由使用端需求驅動，而不是為了包裝具體實作。
 - 修改 architecture contract、資料邊界、錯誤語意、CLI 行為或依賴方向時，必須同步更新文件與測試。
-- 必須遵守 [`coding-style.md`](coding-style.md) 的 Python docstring、命名、exception handling、typing、CLI 與 pytest 規範。
-
+- 必須遵守 [`python-style.md`](python-style.md) 的 Python docstring、命名、exception handling、typing、CLI 與 pytest 規範。

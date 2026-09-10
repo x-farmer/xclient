@@ -4,7 +4,7 @@ This document directs AI agents to the skills available for the XClient project.
 All paths in this document are relative to the XClient project root.
 
 A skill is a task-specific operating guide. Read a skill only when the current
-task matches its purpose. Skills do not replace the XClient `agent.md` or the
+task matches its purpose. Skills do not replace the XClient `AGENTS.md` or the
 required reading it points to; always satisfy those reading requirements first,
 then consult the relevant skill.
 
@@ -19,7 +19,7 @@ containing a `SKILL.md` (plus optional `scripts/` resources). When a task matche
 a skill's purpose, open the matching file and follow its instructions.
 
 If no skill in the index below matches the task, fall back to the regular
-XClient documentation referenced from `agent.md`.
+XClient documentation referenced from `AGENTS.md`.
 
 ## Skill Index
 
@@ -50,15 +50,10 @@ helper scripts) for each skill live once in `skills/<name>/SKILL.md`; that file
 is the single source of truth. Individual `SKILL.md` files MUST NOT restate this
 convention — it is defined here only.
 
-Each IDE adds a thin wrapper that *references* the canonical file instead of
-duplicating it:
-
-- **Cursor**: `.cursor/skills/<name>/SKILL.md` carries Cursor frontmatter
-  (`name`, `description`) and points back to `skills/<name>/SKILL.md` so
-  `/<name>` works as a slash command. Always use this folder form — never a flat
-  `.cursor/skills/<name>.md`, and never drop the `skills/` path segment.
-- **Other IDEs / agents**: register the skill wherever the tool scans and
-  reference `skills/<name>/SKILL.md` rather than copying it.
+The root harness synchronization tool generates metadata-only wrappers in
+`.agents/skills/<name>/SKILL.md` for Codex and Cursor and in
+`.claude/skills/<name>/SKILL.md` for Claude Code. Each wrapper points back to
+the repository-local canonical skill.
 
 Keep operational steps only in the canonical `SKILL.md`; wrappers just point
 here so there is a single source of truth. All paths above are relative to the

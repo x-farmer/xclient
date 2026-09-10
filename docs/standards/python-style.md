@@ -1,4 +1,4 @@
-# XClient Python Coding Style
+# XClient Python Style Standard
 
 本文件定義 xclient 撰寫與修改 Python 程式碼時的 coding style rule，
 適用於所有開發人員與 AI agent。
@@ -66,6 +66,8 @@ from xclient.domain import conversation
 - CLI option、environment variable 與 config key 的名稱若跨越外部 contract，必須與文件化 contract 保持一致。
 
 ## Docstrings 與註解
+
+所有註解內容先遵守 [`comment-content-rule.md`](comment-content-rule.md)；本節只增加 Python docstring、CLI contract 與 XClient boundary 的語言特定要求。
 
 本專案要求「必要註解必須撰寫」。註解不是裝飾，而是 API 契約、
 CLI 行為與維護知識的一部分。
