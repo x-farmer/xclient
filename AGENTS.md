@@ -71,6 +71,11 @@ the contract or use the x-farmer-dev integration checkout.
 
 ## Plans, Commits, Skills, And Harness Changes
 
+- Run `skills/validate/scripts/validate.sh` before committing XClient changes;
+  use `--install` in a fresh checkout.
+- A standalone XClient validation proves only that component revision. Platform
+  completion requires an x-farmer-dev root revision that pins this commit and
+  passes root platform CI.
 - Store active plan drafts under `docs/plans/manuscripts/` using
   `YYYYMMDD-<short-topic>.md`.
 - Follow `docs/standards/conventional-commits.md` for commit messages.

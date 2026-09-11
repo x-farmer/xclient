@@ -26,6 +26,7 @@ XClient documentation referenced from `AGENTS.md`.
 | Skill | Path | When to Use |
 | --- | --- | --- |
 | Build XClient OCI Image | `skills/build-image/SKILL.md` | Building, rebuilding, tagging, or pushing the XClient OCI image (`ghcr.io/x-farmer/xclient`) with the git-derived tag rule. |
+| Validate XClient | `skills/validate/SKILL.md` | Running a frozen dependency sync and XClient tests locally or in component CI. |
 
 ## Adding a New Skill
 
