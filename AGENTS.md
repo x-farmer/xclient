@@ -69,6 +69,19 @@ implementation details.
 If the provider contract is unavailable in a standalone clone, stop and obtain
 the contract or use the x-farmer-dev integration checkout.
 
+## Git Workflow
+
+Before starting or resuming a task, and before every push, read
+`docs/standards/git-workflow.md` and run the preparation gate described in
+`skills/prepare-feature-branch/SKILL.md`. Confirm that the local guards in
+`skills/guard-git-operations/SKILL.md` are installed in this checkout.
+
+Inside the x-farmer-dev monorepo, the root `AGENTS.md` also applies: XClient
+pull requests target `dev`, are merged only with rebase after the root
+integration pull request is green, and the root repository records the platform
+revision. These Git files are synchronized from the root harness; change them
+there.
+
 ## Plans, Commits, Skills, And Harness Changes
 
 - Run `skills/validate/scripts/validate.sh` before committing XClient changes;
