@@ -26,6 +26,8 @@ XClient documentation referenced from `AGENTS.md`.
 | Skill | Path | When to Use |
 | --- | --- | --- |
 | Build XClient OCI Image | `skills/build-image/SKILL.md` | Building, rebuilding, tagging, or pushing the XClient OCI image (`ghcr.io/x-farmer/xclient`) with the git-derived tag rule. |
+| Guard Git Operations | `skills/guard-git-operations/SKILL.md` | Installing or checking the local Git guards: the pre-push hook and the agent shell-command policy used by Cursor and Claude Code hooks. Synchronized from the x-farmer-dev root harness. |
+| Prepare Feature Branch | `skills/prepare-feature-branch/SKILL.md` | Starting, resuming, or pushing feature work: fetch the latest `origin/dev` and enforce clean-tree, task-lifecycle, linear-history, and safe-push rules. Synchronized from the x-farmer-dev root harness. |
 | Validate XClient | `skills/validate/SKILL.md` | Running a frozen dependency sync and XClient tests locally or in component CI. |
 
 ## Adding a New Skill

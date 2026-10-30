@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""Reject pushes that bypass the x-farmer feature-branch delivery rules.
+
+Git runs this hook for every push from a checkout whose core.hooksPath points
+here, so it protects humans and every agent tool alike. It is synchronized into
+standalone subproject clones and must depend only on the standard library.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+
+ZERO_SHA = "0" * 40
+PROTECTED_REFS = {"refs/heads/dev", "refs/heads/main"}
+BASE_BRANCH = "dev"
+
+
+def git(repo: Path, *args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(repo), *args],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        env=env,
+    )
+
+
+def submodule_environment(repo: Path) -> dict[str, str]:
+    """Return the hook environment without the pushing repository's Git variables.
+
+    Git exports GIT_DIR and related variables to hooks (always in linked
+    worktrees); a nested `git -C <submodule>` would otherwise read the parent
+    repository instead of the component.
+    """
+    local = git(repo, "rev-parse", "--local-env-vars").stdout.split()
+    return {key: value for key, value in os.environ.items() if key not in local}
+
+
+def is_ancestor(repo: Path, ancestor: str, descendant: str) -> bool:
+    return git(repo, "merge-base", "--is-ancestor", ancestor, descendant).returncode == 0
+
+
+def changed_gitlinks(repo: Path, old: str, new: str) -> dict[str, str]:
+    """Return submodule paths whose gitlink is added or changed between two revisions."""
+    changes: dict[str, str] = {}
+    for line in git(repo, "diff", "--raw", "--no-abbrev", old, new).stdout.splitlines():
+        meta, _, path = line.partition("\t")
+        fields = meta.split()
+        if len(fields) >= 5 and fields[1] == "160000":
+            changes[path] = fields[3]
+    return changes
+
+
+def check_update(repo: Path, remote: str, local_sha: str, remote_ref: str) -> list[str]:
+    """Return the policy violations of one ref update in this push."""
+    if not remote_ref.startswith("refs/heads/"):
+        return []
+    if remote_ref in PROTECTED_REFS:
+        return [f"direct push to {remote_ref} is not allowed; merge through a pull request"]
+    if local_sha == ZERO_SHA:
+        return []
+
+    base_ref = f"refs/remotes/{remote}/{BASE_BRANCH}"
+    if git(repo, "rev-parse", "--verify", "--quiet", base_ref).returncode != 0:
+        return []
+    problems: list[str] = []
+    if not is_ancestor(repo, base_ref, local_sha):
+        problems.append(
+            f"{remote_ref} does not contain {remote}/{BASE_BRANCH}; run prepare-feature-branch "
+            "to fetch and rebase before pushing"
+        )
+    merges = git(repo, "rev-list", "--merges", f"{base_ref}..{local_sha}").stdout.split()
+    if merges:
+        problems.append(f"{remote_ref} contains merge commits {', '.join(m[:12] for m in merges[:3])}")
+
+    if (repo / ".gitmodules").is_file():
+        environment = submodule_environment(repo)
+        for path, sha in changed_gitlinks(repo, base_ref, local_sha).items():
+            component = repo / path
+            containing = git(
+                component,
+                "for-each-ref",
+                "--contains",
+                sha,
+                "--format=%(refname)",
+                "refs/remotes/origin",
+                env=environment,
+            )
+            if containing.returncode != 0 or not containing.stdout.strip():
+                problems.append(
+                    f"{path} is pinned at {sha}, which is not on any remote branch of that "
+                    "component; push the component first"
+                )
+    return problems
+
+
+def main(argv: list[str]) -> int:
+    remote = argv[1] if len(argv) > 1 else "origin"
+    top = git(Path.cwd(), "rev-parse", "--show-toplevel").stdout.strip()
+    repo = Path(top) if top else Path.cwd()
+    problems: list[str] = []
+    for line in sys.stdin:
+        fields = line.split()
+        if len(fields) == 4:
+            _, local_sha, remote_ref, _ = fields
+            problems.extend(check_update(repo, remote, local_sha, remote_ref))
+    for problem in problems:
+        print(f"pre-push: {problem}", file=sys.stderr)
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

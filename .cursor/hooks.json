@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "python3 skills/guard-git-operations/scripts/guard-command.py --format cursor",
+        "timeout": 15
+      }
+    ]
+  }
+}
